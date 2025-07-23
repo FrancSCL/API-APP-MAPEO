@@ -27,6 +27,10 @@ def parse_cloud_sql_url(url):
             user_pass_part = auth_db_part.split('@')[0]
             database = auth_db_part.split('@')[1]
             
+            # Remover slash inicial si existe
+            if database.startswith('/'):
+                database = database[1:]
+            
             if ':' in user_pass_part:
                 user = user_pass_part.split(':')[0]
                 password = user_pass_part.split(':')[1]
@@ -37,6 +41,8 @@ def parse_cloud_sql_url(url):
             user = ""
             password = ""
             database = auth_db_part
+            if database.startswith('/'):
+                database = database[1:]
         
         # Extraer unix_socket
         unix_socket = ""
@@ -62,32 +68,31 @@ def parse_cloud_sql_url(url):
 def get_db_connection():
     """
     Obtiene conexión a la base de datos.
-    Prioriza Cloud SQL con unix_socket si está en Cloud Run, sino usa conexión local.
+    Usa IP pública para Cloud SQL (solución temporal hasta configurar Unix socket)
     """
     try:
         # Verificar si estamos en Cloud Run
         if os.getenv('K_SERVICE'):
-            logger.info("🚀 Detectado Cloud Run - usando unix_socket")
+            logger.info("🚀 Detectado Cloud Run - usando IP pública (temporal)")
             
-            # URL de Cloud SQL para Cloud Run
-            cloud_sql_url = "mysql+pymysql://UserApp:&8y7c()tu9t/+,6@/lahornilla_base_normalizada?unix_socket=/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla"
+            # Usar IP pública para Cloud SQL (solución temporal)
+            connection_params = {
+                'host': Config.CLOUD_SQL_HOST,
+                'user': Config.CLOUD_SQL_USER,
+                'password': Config.CLOUD_SQL_PASSWORD,
+                'database': Config.CLOUD_SQL_DB,
+                'port': Config.CLOUD_SQL_PORT,
+                'charset': 'utf8mb4',
+                'autocommit': True,
+                'use_unicode': True
+            }
             
-            # Parsear la URL
-            parsed = parse_cloud_sql_url(cloud_sql_url)
+            logger.info(f"🔗 Parámetros de conexión: {connection_params}")
+            logger.info("🔌 Intentando conexión a Cloud SQL por IP pública...")
             
-            if parsed:
-                connection_params = {
-                    'user': parsed['user'],
-                    'password': parsed['password'],
-                    'database': parsed['database'],
-                    'unix_socket': parsed['unix_socket'],
-                    'charset': 'utf8mb4',
-                    'autocommit': True,
-                    'use_unicode': True
-                }
-                logger.info(f"🔗 Parámetros de conexión: {connection_params}")
-            else:
-                raise Exception("No se pudo parsear la URL de Cloud SQL")
+            conn = mysql.connector.connect(**connection_params)
+            logger.info("✅ Conexión exitosa a Cloud SQL")
+            return conn
                 
         else:
             # Conexión local (desarrollo)
@@ -103,9 +108,9 @@ def get_db_connection():
                 'use_unicode': True
             }
             logger.info(f"🔌 Conectando a BD local: {Config.DB_HOST}")
-        
-        return mysql.connector.connect(**connection_params)
+            return mysql.connector.connect(**connection_params)
         
     except Exception as e:
         logger.error(f"❌ Error conectando a BD: {str(e)}")
+        logger.error(f"📋 Tipo de error: {type(e).__name__}")
         raise
