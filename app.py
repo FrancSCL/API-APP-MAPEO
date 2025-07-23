@@ -3,7 +3,11 @@ from flask_jwt_extended import JWTManager
 from config import Config
 from flask_cors import CORS
 from datetime import timedelta
+import logging
 
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Crear la aplicación Flask
 def create_app():
@@ -57,6 +61,7 @@ def create_app():
     app.register_blueprint(hileras_bp, url_prefix="/api/hileras")
     app.register_blueprint(especies_bp, url_prefix="/api/especies")
     app.register_blueprint(variedades_bp, url_prefix="/api/variedades")
+    
     # Crear un nuevo blueprint para las rutas raíz
     root_bp = Blueprint('root_bp', __name__)
     
@@ -66,6 +71,43 @@ def create_app():
     
     # Registrar el blueprint raíz
     app.register_blueprint(root_bp, url_prefix="/api")
+
+    # Endpoint de prueba de conexión a BD
+    @app.route('/api/test-db', methods=['GET'])
+    def test_database():
+        """Endpoint para probar la conexión a la base de datos"""
+        try:
+            from utils.db import get_db_connection
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            
+            # Probar consulta simple
+            cursor.execute("SELECT VERSION() as version, DATABASE() as database_name")
+            result = cursor.fetchone()
+            
+            # Obtener información de tablas
+            cursor.execute("SHOW TABLES")
+            tables = cursor.fetchall()
+            table_names = [list(table.values())[0] for table in tables]
+            
+            cursor.close()
+            conn.close()
+            
+            return {
+                "status": "success",
+                "message": "Conexión exitosa a la base de datos",
+                "mysql_version": result['version'],
+                "database": result['database_name'],
+                "tables_count": len(table_names),
+                "tables": table_names[:10]  # Solo las primeras 10
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error en test-db: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Error de conexión: {str(e)}"
+            }, 500
 
     return app
 
