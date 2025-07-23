@@ -26,5 +26,5 @@ USER app
 # Exponer puerto 8080 (requerido por Cloud Run)
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120", "--keep-alive", "5", "app:app"] 
+# Comando para ejecutar la aplicación usando wsgi.py
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120", "--keep-alive", "5", "wsgi:app"] 
