@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()  # Carga las variables del archivo .env
 
 class Config:
-    DEBUG = os.getenv("DEBUG", "True") == "True"
+    DEBUG = os.getenv("DEBUG", "False") == "True"
     
     # Configuración local (desarrollo)
     DB_HOST = os.getenv("DB_HOST", "localhost")
@@ -27,3 +27,11 @@ class Config:
     # JWT y seguridad
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'Inicio01*')
     SECRET_KEY = os.getenv('SECRET_KEY', 'Inicio01*')
+    
+    # Configuración de CORS
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '')
+    
+    # Detectar si estamos en Cloud Run
+    @classmethod
+    def is_cloud_run(cls):
+        return os.getenv('K_SERVICE') is not None

@@ -1,9 +1,10 @@
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, jsonify
 from flask_jwt_extended import JWTManager
 from config import Config
 from flask_cors import CORS
 from datetime import timedelta
 import logging
+import os
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -13,10 +14,21 @@ logger = logging.getLogger(__name__)
 def create_app():
     app = Flask(__name__)
     
-    # Configurar CORS
+    # Configurar CORS para producción y desarrollo
+    origins = [
+        "http://localhost:*", 
+        "http://127.0.0.1:*",
+        "https://localhost:*",
+        "https://127.0.0.1:*"
+    ]
+    
+    # Agregar dominios de producción si están definidos
+    if os.getenv('ALLOWED_ORIGINS'):
+        origins.extend(os.getenv('ALLOWED_ORIGINS').split(','))
+    
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:*", "http://127.0.0.1:*"],
+            "origins": origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True,
@@ -34,6 +46,27 @@ def create_app():
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
 
     jwt = JWTManager(app)
+
+    # Endpoint raíz para verificar que la API está funcionando
+    @app.route('/', methods=['GET'])
+    def root():
+        return jsonify({
+            "message": "API de Mapeo Agrícola",
+            "status": "running",
+            "version": "1.0.0",
+            "endpoints": {
+                "auth": "/api/auth",
+                "usuarios": "/api/usuarios",
+                "cuarteles": "/api/cuarteles",
+                "plantas": "/api/plantas",
+                "test_db": "/api/test-db"
+            }
+        }), 200
+
+    # Endpoint de health check para Cloud Run
+    @app.route('/health', methods=['GET'])
+    def health_check():
+        return jsonify({"status": "healthy"}), 200
 
     # Registrar los blueprints
     from blueprints.auth import auth_bp
@@ -115,5 +148,7 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Usar puerto 8080 para Cloud Run
+    port = int(os.environ.get('PORT', 8080))
+    app.run(debug=False, host='0.0.0.0', port=port)
 
