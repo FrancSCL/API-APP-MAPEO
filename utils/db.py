@@ -68,31 +68,50 @@ def parse_cloud_sql_url(url):
 def get_db_connection():
     """
     Obtiene conexión a la base de datos.
-    Usa IP pública para Cloud SQL (solución temporal hasta configurar Unix socket)
+    Usa Unix socket en Cloud Run, IP pública como fallback.
     """
     try:
         # Verificar si estamos en Cloud Run
         if os.getenv('K_SERVICE'):
-            logger.info("🚀 Detectado Cloud Run - usando IP pública (temporal)")
+            logger.info("🚀 Detectado Cloud Run - intentando Unix socket")
             
-            # Usar IP pública para Cloud SQL (solución temporal)
-            connection_params = {
-                'host': Config.CLOUD_SQL_HOST,
-                'user': Config.CLOUD_SQL_USER,
-                'password': Config.CLOUD_SQL_PASSWORD,
-                'database': Config.CLOUD_SQL_DB,
-                'port': Config.CLOUD_SQL_PORT,
-                'charset': 'utf8mb4',
-                'autocommit': True,
-                'use_unicode': True
-            }
-            
-            logger.info(f"🔗 Parámetros de conexión: {connection_params}")
-            logger.info("🔌 Intentando conexión a Cloud SQL por IP pública...")
-            
-            conn = mysql.connector.connect(**connection_params)
-            logger.info("✅ Conexión exitosa a Cloud SQL")
-            return conn
+            # Intentar primero con Unix socket
+            try:
+                connection_params = {
+                    'user': Config.CLOUD_SQL_USER,
+                    'password': Config.CLOUD_SQL_PASSWORD,
+                    'database': Config.CLOUD_SQL_DB,
+                    'unix_socket': '/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla',
+                    'charset': 'utf8mb4',
+                    'autocommit': True,
+                    'use_unicode': True
+                }
+                
+                logger.info("🔌 Intentando conexión Unix socket...")
+                conn = mysql.connector.connect(**connection_params)
+                logger.info("✅ Conexión Unix socket exitosa")
+                return conn
+                
+            except Exception as unix_error:
+                logger.warning(f"⚠️  Unix socket falló: {str(unix_error)}")
+                logger.info("🔄 Intentando con IP pública como fallback...")
+                
+                # Fallback a IP pública
+                connection_params = {
+                    'host': Config.CLOUD_SQL_HOST,
+                    'user': Config.CLOUD_SQL_USER,
+                    'password': Config.CLOUD_SQL_PASSWORD,
+                    'database': Config.CLOUD_SQL_DB,
+                    'port': Config.CLOUD_SQL_PORT,
+                    'charset': 'utf8mb4',
+                    'autocommit': True,
+                    'use_unicode': True
+                }
+                
+                logger.info("🔌 Intentando conexión a Cloud SQL por IP pública...")
+                conn = mysql.connector.connect(**connection_params)
+                logger.info("✅ Conexión IP pública exitosa")
+                return conn
                 
         else:
             # Conexión local (desarrollo)

@@ -7,8 +7,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Crear directorio para Cloud SQL socket
-RUN mkdir -p /cloudsql
+# Crear directorio para Cloud SQL socket y asegurar permisos
+RUN mkdir -p /cloudsql && \
+    chmod 755 /cloudsql
 
 # Copiar requirements primero para aprovechar cache de Docker
 COPY requirements.txt .
@@ -18,9 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Crear usuario no-root para seguridad
-RUN useradd --create-home --shell /bin/bash app
-RUN chown -R app:app /app
-RUN chown -R app:app /cloudsql
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app && \
+    chown -R app:app /cloudsql && \
+    chmod 755 /cloudsql
+
 USER app
 
 # Exponer puerto 8080 (requerido por Cloud Run)
