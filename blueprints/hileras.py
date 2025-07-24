@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.db import get_db_connection
 from datetime import datetime, date
 import uuid
+import logging
+import traceback
 
 hileras_bp = Blueprint('hileras_bp', __name__)
 
@@ -58,39 +60,56 @@ def obtener_hilera(hilera_id):
 @jwt_required()
 def crear_hilera():
     try:
+        # Logging para debug
+        logger = logging.getLogger(__name__)
+        logger.info("🌱 Iniciando creación de hilera...")
+        
         data = request.json
+        logger.info(f"📥 Datos recibidos: {data}")
         
         # Validar campos requeridos
         campos_requeridos = ['hilera', 'id_cuartel']
         for campo in campos_requeridos:
             if campo not in data:
+                logger.error(f"❌ Campo requerido faltante: {campo}")
                 return jsonify({"error": f"Campo requerido: {campo}"}), 400
+        
+        logger.info("✅ Campos requeridos validados")
         
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
         # Verificar que el cuartel existe
+        logger.info(f"🔍 Verificando cuartel {data['id_cuartel']}...")
         cursor.execute("""
             SELECT id FROM general_dim_cuartel WHERE id = %s
         """, (data['id_cuartel'],))
         
         if not cursor.fetchone():
+            logger.error(f"❌ Cuartel {data['id_cuartel']} no encontrado")
             cursor.close()
             conn.close()
             return jsonify({"error": "Cuartel no encontrado"}), 404
         
+        logger.info("✅ Cuartel encontrado")
+        
         # Verificar que no existe una hilera con el mismo número en el mismo cuartel
+        logger.info(f"🔍 Verificando duplicado hilera {data['hilera']} en cuartel {data['id_cuartel']}...")
         cursor.execute("""
             SELECT id FROM general_dim_hilera 
             WHERE id_cuartel = %s AND hilera = %s
         """, (data['id_cuartel'], data['hilera']))
         
         if cursor.fetchone():
+            logger.error(f"❌ Ya existe hilera {data['hilera']} en cuartel {data['id_cuartel']}")
             cursor.close()
             conn.close()
             return jsonify({"error": "Ya existe una hilera con ese número en este cuartel"}), 400
         
+        logger.info("✅ No hay duplicados")
+        
         # Insertar la nueva hilera (sin especificar id, se genera automáticamente)
+        logger.info("💾 Insertando nueva hilera...")
         cursor.execute("""
             INSERT INTO general_dim_hilera 
             (hilera, id_cuartel)
@@ -102,6 +121,7 @@ def crear_hilera():
         
         # Obtener el ID de la hilera recién creada
         hilera_id = cursor.lastrowid
+        logger.info(f"✅ Hilera creada con ID: {hilera_id}")
         
         conn.commit()
         cursor.close()
@@ -112,6 +132,9 @@ def crear_hilera():
             "id": hilera_id
         }), 201
     except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ Error en crear_hilera: {str(e)}")
+        logger.error(f"📋 Traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Actualizar una hilera existente

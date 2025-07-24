@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.db import get_db_connection
 from datetime import datetime, date
 import uuid
+import logging
+import traceback
 
 plantas_bp = Blueprint('plantas_bp', __name__)
 
@@ -58,39 +60,57 @@ def obtener_planta(planta_id):
 @jwt_required()
 def crear_planta():
     try:
+        # Logging para debug
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("🌱 Iniciando creación de planta...")
+        
         data = request.json
+        logger.info(f"📥 Datos recibidos: {data}")
         
         # Validar campos requeridos
         campos_requeridos = ['id_hilera', 'planta', 'ubicacion']
         for campo in campos_requeridos:
             if campo not in data:
+                logger.error(f"❌ Campo requerido faltante: {campo}")
                 return jsonify({"error": f"Campo requerido: {campo}"}), 400
+        
+        logger.info("✅ Campos requeridos validados")
         
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
         # Verificar que la hilera existe
+        logger.info(f"🔍 Verificando hilera {data['id_hilera']}...")
         cursor.execute("""
             SELECT id FROM general_dim_hilera WHERE id = %s
         """, (data['id_hilera'],))
         
         if not cursor.fetchone():
+            logger.error(f"❌ Hilera {data['id_hilera']} no encontrada")
             cursor.close()
             conn.close()
             return jsonify({"error": "Hilera no encontrada"}), 404
         
+        logger.info("✅ Hilera encontrada")
+        
         # Verificar que no existe una planta con el mismo número en la misma hilera
+        logger.info(f"🔍 Verificando duplicado planta {data['planta']} en hilera {data['id_hilera']}...")
         cursor.execute("""
             SELECT id FROM general_dim_planta 
             WHERE id_hilera = %s AND planta = %s
         """, (data['id_hilera'], data['planta']))
         
         if cursor.fetchone():
+            logger.error(f"❌ Ya existe planta {data['planta']} en hilera {data['id_hilera']}")
             cursor.close()
             conn.close()
             return jsonify({"error": "Ya existe una planta con ese número en esta hilera"}), 400
         
+        logger.info("✅ No hay duplicados")
+        
         # Insertar la nueva planta (sin especificar id, se genera automáticamente)
+        logger.info("💾 Insertando nueva planta...")
         cursor.execute("""
             INSERT INTO general_dim_planta 
             (id_hilera, planta, ubicacion, fecha_creacion)
@@ -104,6 +124,7 @@ def crear_planta():
         
         # Obtener el ID de la planta recién creada
         planta_id = cursor.lastrowid
+        logger.info(f"✅ Planta creada con ID: {planta_id}")
         
         conn.commit()
         cursor.close()
@@ -114,6 +135,10 @@ def crear_planta():
             "id": planta_id
         }), 201
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ Error en crear_planta: {str(e)}")
+        logger.error(f"📋 Traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Actualizar una planta existente
