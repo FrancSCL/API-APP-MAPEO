@@ -31,7 +31,8 @@ def obtener_usuarios():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
     SELECT 
-        u.id, u.usuario, u.correo, u.id_sucursalactiva, u.id_estado, u.id_rol, u.id_perfil, u.id_colaborador, u.fecha_creacion, s.nombre AS nombre_sucursal
+        u.id, u.usuario, u.correo, u.nombre, u.apellido_paterno, u.apellido_materno, 
+        u.id_sucursalactiva, u.id_estado, u.id_rol, u.id_perfil, u.fecha_creacion, s.nombre AS nombre_sucursal
     FROM general_dim_usuario u
     LEFT JOIN general_dim_sucursal s ON u.id_sucursalactiva = s.id
 """)
@@ -462,5 +463,110 @@ def eliminar_apps_permitidas(usuario_id):
             "apps_eliminadas": filas_eliminadas
         }), 200
         
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 🔹 Obtener información del usuario actual
+@usuarios_bp.route('/perfil', methods=['GET'])
+@jwt_required()
+def obtener_perfil_usuario():
+    try:
+        usuario_id = get_jwt_identity()
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT u.id, u.usuario, u.correo, u.nombre, u.apellido_paterno, u.apellido_materno,
+                   CONCAT(u.nombre, ' ', u.apellido_paterno, ' ', COALESCE(u.apellido_materno, '')) as nombre_completo,
+                   u.id_sucursalactiva, u.id_estado, u.id_rol, u.id_perfil, u.fecha_creacion,
+                   s.nombre AS nombre_sucursal
+            FROM general_dim_usuario u
+            LEFT JOIN general_dim_sucursal s ON u.id_sucursalactiva = s.id
+            WHERE u.id = %s
+        """, (usuario_id,))
+
+        usuario = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        return jsonify(usuario), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 🔹 Actualizar perfil del usuario actual
+@usuarios_bp.route('/perfil', methods=['PUT'])
+@jwt_required()
+def actualizar_perfil_usuario():
+    try:
+        usuario_id = get_jwt_identity()
+        data = request.json
+        
+        # Campos que se pueden actualizar
+        nombre = data.get('nombre')
+        apellido_paterno = data.get('apellido_paterno')
+        apellido_materno = data.get('apellido_materno')
+        correo = data.get('correo')
+
+        if not any([nombre, apellido_paterno, apellido_materno, correo]):
+            return jsonify({"error": "Al menos un campo debe ser proporcionado para actualizar"}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Construir la consulta dinámicamente
+        update_fields = []
+        update_values = []
+        
+        if nombre is not None:
+            update_fields.append("nombre = %s")
+            update_values.append(nombre)
+        
+        if apellido_paterno is not None:
+            update_fields.append("apellido_paterno = %s")
+            update_values.append(apellido_paterno)
+        
+        if apellido_materno is not None:
+            update_fields.append("apellido_materno = %s")
+            update_values.append(apellido_materno)
+        
+        if correo is not None:
+            update_fields.append("correo = %s")
+            update_values.append(correo)
+
+        update_values.append(usuario_id)
+        
+        query = f"""
+            UPDATE general_dim_usuario 
+            SET {', '.join(update_fields)}
+            WHERE id = %s
+        """
+        
+        cursor.execute(query, update_values)
+        conn.commit()
+
+        # Obtener el usuario actualizado
+        cursor.execute("""
+            SELECT u.id, u.usuario, u.correo, u.nombre, u.apellido_paterno, u.apellido_materno,
+                   CONCAT(u.nombre, ' ', u.apellido_paterno, ' ', COALESCE(u.apellido_materno, '')) as nombre_completo,
+                   u.id_sucursalactiva, u.id_estado, u.id_rol, u.id_perfil, u.fecha_creacion,
+                   s.nombre AS nombre_sucursal
+            FROM general_dim_usuario u
+            LEFT JOIN general_dim_sucursal s ON u.id_sucursalactiva = s.id
+            WHERE u.id = %s
+        """, (usuario_id,))
+
+        usuario_actualizado = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            "message": "Perfil actualizado correctamente",
+            "usuario": usuario_actualizado
+        }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500

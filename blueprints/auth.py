@@ -14,13 +14,16 @@ def register():
     correo = data.get('correo')
     clave = data.get('clave')
     usuario = data.get('usuario')
+    nombre = data.get('nombre')
+    apellido_paterno = data.get('apellido_paterno')
+    apellido_materno = data.get('apellido_materno')
     id_sucursalactiva = data.get('id_sucursalactiva')
     id_estado = data.get('id_estado', 1)  # Por defecto activo
     id_rol = data.get('id_rol', 3)  # Por defecto usuario común
     id_perfil = data.get('id_perfil', 1)  # Por defecto perfil 1
 
-    if not correo or not clave or not usuario or not id_sucursalactiva:
-        return jsonify({"error": "Correo, clave, usuario y sucursal son requeridos"}), 400
+    if not correo or not clave or not usuario or not id_sucursalactiva or not nombre or not apellido_paterno:
+        return jsonify({"error": "Correo, clave, usuario, nombre, apellido paterno y sucursal son requeridos"}), 400
 
     # Generar hash de la contraseña
     salt = bcrypt.gensalt()
@@ -31,9 +34,9 @@ def register():
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO general_dim_usuario 
-               (id, usuario, correo, clave, id_sucursalactiva, id_estado, id_rol, id_perfil, fecha_creacion) 
-               VALUES (UUID(), %s, %s, %s, %s, %s, %s, %s, %s)""",
-            (usuario, correo, clave_encriptada.decode('utf-8'), id_sucursalactiva, 
+               (id, usuario, correo, clave, nombre, apellido_paterno, apellido_materno, id_sucursalactiva, id_estado, id_rol, id_perfil, fecha_creacion) 
+               VALUES (UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (usuario, correo, clave_encriptada.decode('utf-8'), nombre, apellido_paterno, apellido_materno, id_sucursalactiva, 
              id_estado, id_rol, id_perfil, date.today())
         )
         conn.commit()
@@ -59,7 +62,8 @@ def login():
 
         # Buscar usuario y verificar estado y acceso a la app
         sql = """
-            SELECT u.*, s.nombre as sucursal_nombre
+            SELECT u.*, s.nombre as sucursal_nombre,
+                   CONCAT(u.nombre, ' ', u.apellido_paterno, ' ', COALESCE(u.apellido_materno, '')) as nombre_completo
             FROM general_dim_usuario u
             LEFT JOIN general_dim_sucursal s ON u.id_sucursalactiva = s.id
             WHERE u.usuario = %s 
@@ -96,6 +100,7 @@ def login():
         return jsonify({
             "access_token": access_token,
             "usuario": user['usuario'],
+            "nombre_completo": user['nombre_completo'],
             "id_sucursal": user['id_sucursalactiva'],
             "sucursal_nombre": user['sucursal_nombre'],
             "id_rol": user['id_rol'],
@@ -115,7 +120,8 @@ def refresh():
         cursor = conn.cursor(dictionary=True)
 
         sql = """
-            SELECT u.*, s.nombre as sucursal_nombre
+            SELECT u.*, s.nombre as sucursal_nombre,
+                   CONCAT(u.nombre, ' ', u.apellido_paterno, ' ', COALESCE(u.apellido_materno, '')) as nombre_completo
             FROM general_dim_usuario u
             LEFT JOIN general_dim_sucursal s ON u.id_sucursalactiva = s.id
             WHERE u.id = %s 
@@ -151,6 +157,7 @@ def refresh():
         return jsonify({
             "access_token": access_token,
             "usuario": user['usuario'],
+            "nombre_completo": user['nombre_completo'],
             "id_sucursal": user['id_sucursalactiva'],
             "sucursal_nombre": user['sucursal_nombre'],
             "id_rol": user['id_rol'],
