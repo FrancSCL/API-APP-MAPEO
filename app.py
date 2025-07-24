@@ -110,9 +110,9 @@ def create_app():
 
     # Registrar los blueprints
     try:
-    from blueprints.auth import auth_bp
-    from blueprints.opciones import opciones_bp
-    from blueprints.usuarios import usuarios_bp 
+        from blueprints.auth import auth_bp
+        from blueprints.opciones import opciones_bp
+        from blueprints.usuarios import usuarios_bp 
         from blueprints.registros import registros_bp
         from blueprints.cuarteles import cuarteles_bp
         from blueprints.estadocatastro import estadocatastro_bp
@@ -124,10 +124,10 @@ def create_app():
         
         logger.info("📦 Importando blueprints...")
     
-    # Registrar blueprints
-    app.register_blueprint(opciones_bp, url_prefix="/api/opciones")
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(usuarios_bp, url_prefix="/api/usuarios")
+        # Registrar blueprints
+        app.register_blueprint(opciones_bp, url_prefix="/api/opciones")
+        app.register_blueprint(auth_bp, url_prefix="/api/auth")
+        app.register_blueprint(usuarios_bp, url_prefix="/api/usuarios")
         app.register_blueprint(registros_bp, url_prefix="/api/registros")
         app.register_blueprint(cuarteles_bp, url_prefix="/api/cuarteles")
         app.register_blueprint(estadocatastro_bp, url_prefix="/api/estadocatastro")
@@ -149,8 +149,8 @@ def create_app():
     
     # Importar y registrar las rutas raíz
     try:
-    from blueprints.usuarios import obtener_sucursales
-    root_bp.add_url_rule('/sucursales/', 'obtener_sucursales', obtener_sucursales, methods=['GET', 'OPTIONS'])
+        from blueprints.opciones import obtener_sucursales
+        root_bp.add_url_rule('/sucursales/', 'obtener_sucursales', obtener_sucursales, methods=['GET', 'OPTIONS'])
         logger.info("✅ Rutas raíz registradas")
     except Exception as e:
         logger.error(f"❌ Error registrando rutas raíz: {str(e)}")
