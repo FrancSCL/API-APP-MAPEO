@@ -214,7 +214,7 @@ def obtener_registros_por_evaluador(evaluador_id):
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Obtener registros por planta
-@registros_bp.route('/planta/<int:planta_id>', methods=['GET'])
+@registros_bp.route('/planta/<string:planta_id>', methods=['GET'])
 @jwt_required()
 def obtener_registros_por_planta(planta_id):
     try:

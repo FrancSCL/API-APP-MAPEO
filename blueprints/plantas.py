@@ -31,7 +31,7 @@ def obtener_plantas():
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Obtener una planta específica por ID
-@plantas_bp.route('/<int:planta_id>', methods=['GET'])
+@plantas_bp.route('/<string:planta_id>', methods=['GET'])
 @jwt_required()
 def obtener_planta(planta_id):
     try:
@@ -142,7 +142,7 @@ def crear_planta():
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Actualizar una planta existente
-@plantas_bp.route('/<int:planta_id>', methods=['PUT'])
+@plantas_bp.route('/<string:planta_id>', methods=['PUT'])
 @jwt_required()
 def actualizar_planta(planta_id):
     try:
@@ -199,7 +199,7 @@ def actualizar_planta(planta_id):
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Eliminar una planta
-@plantas_bp.route('/<int:planta_id>', methods=['DELETE'])
+@plantas_bp.route('/<string:planta_id>', methods=['DELETE'])
 @jwt_required()
 def eliminar_planta(planta_id):
     try:
