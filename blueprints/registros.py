@@ -61,11 +61,25 @@ def crear_registro():
         data = request.json
         usuario_id = get_jwt_identity()
         
+        # Logging para debug
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"📥 Datos recibidos: {data}")
+        logger.info(f"🔍 id_planta recibido: {data.get('id_planta')} - Tipo: {type(data.get('id_planta'))}")
+        
         # Validar campos requeridos
         campos_requeridos = ['id_planta', 'id_tipoplanta']
         for campo in campos_requeridos:
             if campo not in data:
                 return jsonify({"error": f"Campo requerido: {campo}"}), 400
+        
+        # Validar que id_planta sea un número válido
+        try:
+            id_planta = int(data['id_planta'])
+            logger.info(f"✅ id_planta convertido a int: {id_planta}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"❌ Error convirtiendo id_planta: {e}")
+            return jsonify({"error": f"id_planta debe ser un número válido: {data['id_planta']}"}), 400
         
         # Generar ID único
         registro_id = str(uuid.uuid4())
@@ -82,7 +96,7 @@ def crear_registro():
             registro_id,
             usuario_id,
             datetime.now(),
-            data['id_planta'],
+            id_planta,  # Usar el valor convertido
             data['id_tipoplanta'],
             data.get('imagen', None)
         ))
@@ -91,11 +105,13 @@ def crear_registro():
         cursor.close()
         conn.close()
         
+        logger.info(f"✅ Registro creado exitosamente con id: {registro_id}")
         return jsonify({
             "message": "Registro creado exitosamente",
             "id": registro_id
         }), 201
     except Exception as e:
+        logger.error(f"❌ Error creando registro: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Actualizar un registro existente
@@ -105,6 +121,11 @@ def actualizar_registro(registro_id):
     try:
         data = request.json
         usuario_id = get_jwt_identity()
+        
+        # Logging para debug
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"📥 Datos de actualización recibidos: {data}")
         
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -126,8 +147,19 @@ def actualizar_registro(registro_id):
         
         for campo in campos_actualizables:
             if campo in data:
+                # Validar id_planta si está presente
+                if campo == 'id_planta':
+                    try:
+                        id_planta = int(data[campo])
+                        logger.info(f"✅ id_planta convertido a int: {id_planta}")
+                        valores.append(id_planta)
+                    except (ValueError, TypeError) as e:
+                        logger.error(f"❌ Error convirtiendo id_planta: {e}")
+                        return jsonify({"error": f"id_planta debe ser un número válido: {data[campo]}"}), 400
+                else:
+                    valores.append(data[campo])
+                
                 campos_a_actualizar.append(f"{campo} = %s")
-                valores.append(data[campo])
         
         if not campos_a_actualizar:
             cursor.close()
@@ -149,11 +181,13 @@ def actualizar_registro(registro_id):
         cursor.close()
         conn.close()
         
+        logger.info(f"✅ Registro actualizado exitosamente: {registro_id}")
         return jsonify({
             "message": "Registro actualizado exitosamente",
             "id": registro_id
         }), 200
     except Exception as e:
+        logger.error(f"❌ Error actualizando registro: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 # 🔹 Eliminar un registro

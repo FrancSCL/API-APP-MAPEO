@@ -89,6 +89,8 @@ def create_app():
                 "endpoints": {
                     "auth": "/api/auth",
                     "usuarios": "/api/usuarios",
+                    "registros": "/api/registros",
+                    "registromapeo": "/api/registromapeo",
                     "cuarteles": "/api/cuarteles",
                     "plantas": "/api/plantas",
                     "test_db": "/api/test-db"
@@ -114,6 +116,7 @@ def create_app():
         from blueprints.opciones import opciones_bp
         from blueprints.usuarios import usuarios_bp 
         from blueprints.registros import registros_bp
+        from blueprints.registromapeo import registromapeo_bp
         from blueprints.cuarteles import cuarteles_bp
         from blueprints.estadocatastro import estadocatastro_bp
         from blueprints.plantas import plantas_bp
@@ -129,6 +132,7 @@ def create_app():
         app.register_blueprint(auth_bp, url_prefix="/api/auth")
         app.register_blueprint(usuarios_bp, url_prefix="/api/usuarios")
         app.register_blueprint(registros_bp, url_prefix="/api/registros")
+        app.register_blueprint(registromapeo_bp, url_prefix="/api/registromapeo")
         app.register_blueprint(cuarteles_bp, url_prefix="/api/cuarteles")
         app.register_blueprint(estadocatastro_bp, url_prefix="/api/estadocatastro")
         app.register_blueprint(plantas_bp, url_prefix="/api/plantas")
