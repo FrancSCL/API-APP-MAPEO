@@ -15,7 +15,7 @@ Nueva tabla separada para manejar el mapeo de temporadas y cuarteles.
   "id_temporada": 1,
   "id_cuartel": 5,
   "fecha_inicio": "2024-01-01",
-  "fecha_termino": "2024-12-31",
+  "fecha_termino": "2024-12-31",  // OPCIONAL
   "id_estado": 1
 }
 ```

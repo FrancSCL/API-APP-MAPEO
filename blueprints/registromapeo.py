@@ -61,7 +61,7 @@ def crear_registro_mapeo():
         data = request.json
         
         # Validar campos requeridos
-        campos_requeridos = ['id_temporada', 'id_cuartel', 'fecha_inicio', 'fecha_termino', 'id_estado']
+        campos_requeridos = ['id_temporada', 'id_cuartel', 'fecha_inicio', 'id_estado']
         for campo in campos_requeridos:
             if campo not in data:
                 return jsonify({"error": f"Campo requerido: {campo}"}), 400
@@ -77,7 +77,9 @@ def crear_registro_mapeo():
         # Validar formato de fechas
         try:
             fecha_inicio = datetime.strptime(data['fecha_inicio'], '%Y-%m-%d').date()
-            fecha_termino = datetime.strptime(data['fecha_termino'], '%Y-%m-%d').date()
+            fecha_termino = None
+            if 'fecha_termino' in data and data['fecha_termino']:
+                fecha_termino = datetime.strptime(data['fecha_termino'], '%Y-%m-%d').date()
         except ValueError:
             return jsonify({"error": "Las fechas deben estar en formato YYYY-MM-DD"}), 400
         
