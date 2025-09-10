@@ -16,8 +16,8 @@ def obtener_cuarteles():
         
         cursor.execute("""
             SELECT id, id_ceco, nombre, id_variedad, superficie, ano_plantacion, 
-                   dsh, deh, id_propiedad, id_portainjerto, brazos_ejes, id_estado, 
-                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro
+                   dsh, deh, id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, 
+                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision
             FROM general_dim_cuartel
             ORDER BY nombre ASC
         """)
@@ -40,8 +40,8 @@ def obtener_cuartel(cuartel_id):
         
         cursor.execute("""
             SELECT id, id_ceco, nombre, id_variedad, superficie, ano_plantacion, 
-                   dsh, deh, id_propiedad, id_portainjerto, brazos_ejes, id_estado, 
-                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro
+                   dsh, deh, id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, 
+                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision
             FROM general_dim_cuartel
             WHERE id = %s
         """, (cuartel_id,))
@@ -77,9 +77,9 @@ def crear_cuartel():
         cursor.execute("""
             INSERT INTO general_dim_cuartel 
             (id_ceco, nombre, id_variedad, superficie, ano_plantacion, dsh, deh, 
-             id_propiedad, id_portainjerto, brazos_ejes, id_estado, fecha_baja, 
-             id_estadoproductivo, n_hileras, id_estadocatastro)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, fecha_baja, 
+             id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             data['id_ceco'],
             data['nombre'],
@@ -90,12 +90,13 @@ def crear_cuartel():
             data.get('deh'),
             data.get('id_propiedad'),
             data.get('id_portainjerto'),
-            data.get('brazos_ejes'),
+            data.get('subdivisionesplanta'),
             data.get('id_estado', 1),  # Por defecto activo
             data.get('fecha_baja'),
             data.get('id_estadoproductivo'),
             data.get('n_hileras'),
-            data.get('id_estadocatastro')
+            data.get('id_estadocatastro'),
+            data.get('id_tiposubdivision')
         ))
         
         # Obtener el ID del cuartel recién creado
@@ -135,8 +136,8 @@ def actualizar_cuartel(cuartel_id):
         # Construir la consulta de actualización dinámicamente
         campos_actualizables = [
             'id_ceco', 'nombre', 'id_variedad', 'superficie', 'ano_plantacion',
-            'dsh', 'deh', 'id_propiedad', 'id_portainjerto', 'brazos_ejes',
-            'id_estado', 'fecha_baja', 'id_estadoproductivo', 'n_hileras', 'id_estadocatastro'
+            'dsh', 'deh', 'id_propiedad', 'id_portainjerto', 'subdivisionesplanta',
+            'id_estado', 'fecha_baja', 'id_estadoproductivo', 'n_hileras', 'id_estadocatastro', 'id_tiposubdivision'
         ]
         campos_a_actualizar = []
         valores = []
@@ -219,8 +220,8 @@ def obtener_cuarteles_por_ceco(ceco_id):
         
         cursor.execute("""
             SELECT id, id_ceco, nombre, id_variedad, superficie, ano_plantacion, 
-                   dsh, deh, id_propiedad, id_portainjerto, brazos_ejes, id_estado, 
-                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro
+                   dsh, deh, id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, 
+                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision
             FROM general_dim_cuartel
             WHERE id_ceco = %s
             ORDER BY nombre ASC
@@ -244,8 +245,8 @@ def obtener_cuarteles_por_variedad(variedad_id):
         
         cursor.execute("""
             SELECT id, id_ceco, nombre, id_variedad, superficie, ano_plantacion, 
-                   dsh, deh, id_propiedad, id_portainjerto, brazos_ejes, id_estado, 
-                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro
+                   dsh, deh, id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, 
+                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision
             FROM general_dim_cuartel
             WHERE id_variedad = %s
             ORDER BY nombre ASC
@@ -269,12 +270,9 @@ def obtener_cuarteles_activos():
         cursor.execute("""
             SELECT 
                 c.id, c.id_ceco, c.nombre, c.id_variedad, c.superficie, c.ano_plantacion, 
-                c.dsh, c.deh, c.id_propiedad, c.id_portainjerto, c.brazos_ejes, c.id_estado, 
-                c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro,
-                ce.id_sucursal, s.nombre AS nombre_sucursal
+                c.dsh, c.deh, c.id_propiedad, c.id_portainjerto, c.subdivisionesplanta, c.id_estado, 
+                c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro, c.id_tiposubdivision
             FROM general_dim_cuartel c
-            LEFT JOIN general_dim_ceco ce ON c.id_ceco = ce.id
-            LEFT JOIN general_dim_sucursal s ON ce.id_sucursal = s.id
             WHERE c.id_estado = 1
             ORDER BY c.nombre ASC
         """)
@@ -295,8 +293,8 @@ def obtener_cuarteles_por_propiedad(propiedad_id):
         
         cursor.execute("""
             SELECT id, id_ceco, nombre, id_variedad, superficie, ano_plantacion, 
-                   dsh, deh, id_propiedad, id_portainjerto, brazos_ejes, id_estado, 
-                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro
+                   dsh, deh, id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, 
+                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision
             FROM general_dim_cuartel
             WHERE id_propiedad = %s
             ORDER BY nombre ASC
@@ -320,8 +318,8 @@ def buscar_cuarteles_por_nombre(nombre):
         
         cursor.execute("""
             SELECT id, id_ceco, nombre, id_variedad, superficie, ano_plantacion, 
-                   dsh, deh, id_propiedad, id_portainjerto, brazos_ejes, id_estado, 
-                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro
+                   dsh, deh, id_propiedad, id_portainjerto, subdivisionesplanta, id_estado, 
+                   fecha_baja, id_estadoproductivo, n_hileras, id_estadocatastro, id_tiposubdivision
             FROM general_dim_cuartel
             WHERE nombre LIKE %s
             ORDER BY nombre ASC
@@ -345,12 +343,9 @@ def obtener_cuarteles_catastro_finalizado():
         
         cursor.execute("""
             SELECT c.id, c.id_ceco, c.nombre, c.id_variedad, c.superficie, c.ano_plantacion, 
-                   c.dsh, c.deh, c.id_propiedad, c.id_portainjerto, c.brazos_ejes, c.id_estado, 
-                   c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro,
-                   ce.id_sucursal, s.nombre AS nombre_sucursal
+                   c.dsh, c.deh, c.id_propiedad, c.id_portainjerto, c.subdivisionesplanta, c.id_estado, 
+                   c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro, c.id_tiposubdivision
             FROM general_dim_cuartel c
-            LEFT JOIN general_dim_ceco ce ON c.id_ceco = ce.id
-            LEFT JOIN general_dim_sucursal s ON ce.id_sucursal = s.id
             WHERE c.id_estadocatastro = 2  -- Asumiendo que 2 = finalizado
             AND c.id_estado = 1  -- Solo cuarteles activos
             ORDER BY c.nombre ASC
