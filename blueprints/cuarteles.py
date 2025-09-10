@@ -6,7 +6,8 @@ import uuid
 
 cuarteles_bp = Blueprint('cuarteles_bp', __name__)
 
-# 🔄 VERSIÓN ACTUALIZADA - Sin brazos_ejes, con subdivisionesplanta
+# 🔄 VERSIÓN ACTUALIZADA v2.1 - Sin brazos_ejes, con subdivisionesplanta y id_tiposubdivision
+# ✅ Estructura de tabla actualizada correctamente
 
 # 🔹 Obtener todos los cuarteles
 @cuarteles_bp.route('/', methods=['GET'])
