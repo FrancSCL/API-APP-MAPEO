@@ -274,8 +274,11 @@ def obtener_cuarteles_activos():
             SELECT 
                 c.id, c.id_ceco, c.nombre, c.id_variedad, c.superficie, c.ano_plantacion, 
                 c.dsh, c.deh, c.id_propiedad, c.id_portainjerto, c.subdivisionesplanta, c.id_estado, 
-                c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro, c.id_tiposubdivision
+                c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro, c.id_tiposubdivision,
+                ce.nombre as ceco_nombre, ce.id_sucursal, s.nombre as sucursal_nombre
             FROM general_dim_cuartel c
+            LEFT JOIN general_dim_ceco ce ON c.id_ceco = ce.id
+            LEFT JOIN general_dim_sucursal s ON ce.id_sucursal = s.id
             WHERE c.id_estado = 1
             ORDER BY c.nombre ASC
         """)
@@ -327,6 +330,35 @@ def buscar_cuarteles_por_nombre(nombre):
             WHERE nombre LIKE %s
             ORDER BY nombre ASC
         """, (f'%{nombre}%',))
+        
+        cuarteles = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify(cuarteles), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 🔹 NUEVO: Obtener cuarteles por sucursal
+@cuarteles_bp.route('/sucursal/<int:sucursal_id>', methods=['GET'])
+@jwt_required()
+def obtener_cuarteles_por_sucursal(sucursal_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT 
+                c.id, c.id_ceco, c.nombre, c.id_variedad, c.superficie, c.ano_plantacion, 
+                c.dsh, c.deh, c.id_propiedad, c.id_portainjerto, c.subdivisionesplanta, c.id_estado, 
+                c.fecha_baja, c.id_estadoproductivo, c.n_hileras, c.id_estadocatastro, c.id_tiposubdivision,
+                ce.nombre as ceco_nombre, ce.id_sucursal, s.nombre as sucursal_nombre
+            FROM general_dim_cuartel c
+            LEFT JOIN general_dim_ceco ce ON c.id_ceco = ce.id
+            LEFT JOIN general_dim_sucursal s ON ce.id_sucursal = s.id
+            WHERE c.id_estado = 1 AND ce.id_sucursal = %s
+            ORDER BY c.nombre ASC
+        """, (sucursal_id,))
         
         cuarteles = cursor.fetchall()
         cursor.close()
