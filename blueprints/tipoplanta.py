@@ -13,7 +13,7 @@ def obtener_tipos_planta():
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, nombre, factor_productivo, id_empresa
+            SELECT id, nombre, factor_productivo, id_empresa, descripcion
             FROM mapeo_dim_tipoplanta
             ORDER BY nombre ASC
         """)
@@ -35,7 +35,7 @@ def obtener_tipo_planta(tipo_id):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, nombre, factor_productivo, id_empresa
+            SELECT id, nombre, factor_productivo, id_empresa, descripcion
             FROM mapeo_dim_tipoplanta
             WHERE id = %s
         """, (tipo_id,))
@@ -60,7 +60,7 @@ def obtener_tipos_planta_por_empresa(empresa_id):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, nombre, factor_productivo, id_empresa
+            SELECT id, nombre, factor_productivo, id_empresa, descripcion
             FROM mapeo_dim_tipoplanta
             WHERE id_empresa = %s
             ORDER BY nombre ASC
@@ -83,7 +83,7 @@ def buscar_tipos_planta_por_nombre(nombre):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, nombre, factor_productivo, id_empresa
+            SELECT id, nombre, factor_productivo, id_empresa, descripcion
             FROM mapeo_dim_tipoplanta
             WHERE nombre LIKE %s
             ORDER BY nombre ASC

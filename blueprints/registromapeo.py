@@ -304,10 +304,10 @@ def obtener_progreso_registro(registro_id):
         
         # Obtener todas las hileras del cuartel
         cursor.execute("""
-            SELECT id, nombre, id_cuartel
+            SELECT id, hilera, id_cuartel
             FROM general_dim_hilera
             WHERE id_cuartel = %s
-            ORDER BY nombre ASC
+            ORDER BY hilera ASC
         """, (registro['id_cuartel'],))
         
         hileras = cursor.fetchall()
@@ -332,9 +332,7 @@ def obtener_progreso_registro(registro_id):
                 SELECT COUNT(*) as plantas_mapeadas
                 FROM mapeo_fact_registro r
                 INNER JOIN general_dim_planta p ON r.id_planta = p.id
-                WHERE p.id_hilera = %s AND r.id_evaluador IN (
-                    SELECT id_evaluador FROM mapeo_fact_registromapeo WHERE id = %s
-                )
+                WHERE p.id_hilera = %s AND r.id_mapeo = %s
             """, (hilera['id'], registro_id))
             
             plantas_mapeadas_result = cursor.fetchone()
@@ -367,7 +365,7 @@ def obtener_progreso_registro(registro_id):
             
             hileras_con_progreso.append({
                 "id_hilera": hilera['id'],
-                "nombre": hilera['nombre'],
+                "hilera": hilera['hilera'],
                 "total_plantas": total_plantas,
                 "plantas_mapeadas": plantas_mapeadas,
                 "porcentaje": round(porcentaje, 2),
@@ -504,7 +502,7 @@ def actualizar_estado_hilera(registro_id, hilera_id):
         
         # Obtener el estado actualizado
         cursor.execute("""
-            SELECT eh.estado, eh.fecha_actualizacion, h.nombre as nombre_hilera
+            SELECT eh.estado, eh.fecha_actualizacion, h.hilera as numero_hilera
             FROM mapeo_fact_estado_hilera eh
             INNER JOIN general_dim_hilera h ON eh.id_hilera = h.id
             WHERE eh.id_registro_mapeo = %s AND eh.id_hilera = %s
@@ -519,7 +517,7 @@ def actualizar_estado_hilera(registro_id, hilera_id):
             "success": True,
             "hilera_actualizada": {
                 "id_hilera": hilera_id,
-                "nombre_hilera": estado_actualizado['nombre_hilera'],
+                "numero_hilera": estado_actualizado['numero_hilera'],
                 "estado": estado_actualizado['estado'],
                 "fecha_actualizacion": estado_actualizado['fecha_actualizacion'].isoformat()
             }

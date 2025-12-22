@@ -1,0 +1,164 @@
+================================================================================
+ESTRUCTURA REAL DE TABLAS EN LA BASE DE DATOS
+================================================================================
+
+
+[TABLA] general_dim_usuario:
+--------------------------------------------------------------------------------
+  - id                             varchar(45)          NOT NULL   PRI    
+  - id_sucursalactiva              int                  NOT NULL   MUL    
+  - usuario                        varchar(45)          NOT NULL   UNI    
+  - nombre                         varchar(45)          NOT NULL          
+  - apellido_paterno               varchar(45)          NOT NULL          
+  - apellido_materno               varchar(45)          NULL              
+  - clave                          varchar(255)         NOT NULL          
+  - fecha_creacion                 date                 NOT NULL          
+  - id_estado                      int                  NOT NULL   MUL   DEFAULT 1 
+  - correo                         varchar(100)         NOT NULL          
+  - id_rol                         int                  NOT NULL   MUL   DEFAULT 3 
+  - id_perfil                      int                  NOT NULL   MUL   DEFAULT 1 
+
+[TABLA] general_dim_sucursal:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    
+  - nombre                         varchar(45)          NOT NULL          
+  - ubicacion                      varchar(60)          NULL              
+  - id_empresa                     int                  NOT NULL   MUL    
+  - id_sucursaltipo                int                  NOT NULL   MUL   DEFAULT 1 
+
+[TABLA] general_dim_cuartel:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    
+  - id_ceco                        int                  NOT NULL   MUL    
+  - nombre                         varchar(45)          NOT NULL          
+  - id_variedad                    int                  NOT NULL          
+  - superficie                     float                NOT NULL          
+  - ano_plantacion                 int                  NULL             DEFAULT year(curdate()) DEFAULT_GENERATED
+  - dsh                            float                NULL              
+  - deh                            float                NULL              
+  - id_propiedad                   int                  NOT NULL   MUL    
+  - id_portainjerto                int                  NULL       MUL    
+  - subdivisionesplanta            int                  NULL              
+  - id_estado                      tinyint              NOT NULL   MUL   DEFAULT 1 
+  - fecha_baja                     date                 NULL              
+  - id_estadoproductivo            int                  NOT NULL   MUL    
+  - n_hileras                      int                  NULL              
+  - id_estadocatastro              int                  NOT NULL   MUL   DEFAULT 1 
+  - id_tiposubdivision             int                  NULL       MUL    
+
+[TABLA] general_dim_hilera:
+--------------------------------------------------------------------------------
+  - id                             bigint               NOT NULL   PRI    
+  - hilera                         int                  NOT NULL          
+  - id_cuartel                     int                  NOT NULL   MUL    
+
+[TABLA] general_dim_planta:
+--------------------------------------------------------------------------------
+  - id                             bigint               NOT NULL   PRI    
+  - id_hilera                      bigint               NOT NULL   MUL    
+  - planta                         int                  NOT NULL          
+  - ubicacion                      varchar(100)         NULL              
+  - fecha_creacion                 date                 NULL              
+
+[TABLA] general_dim_variedad:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - nombre                         varchar(45)          NOT NULL          
+  - id_especie                     int                  NOT NULL   MUL    
+  - id_forma                       int                  NULL       MUL    
+  - id_color                       int                  NULL       MUL    
+
+[TABLA] general_dim_especie:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - nombre                         varchar(45)          NOT NULL          
+  - caja_equivalente               float                NOT NULL          
+
+[TABLA] mapeo_fact_registromapeo:
+--------------------------------------------------------------------------------
+  - id                             varchar(45)          NOT NULL   PRI    
+  - id_temporada                   int                  NOT NULL          
+  - id_cuartel                     int                  NOT NULL          
+  - fecha_inicio                   date                 NOT NULL          
+  - fecha_termino                  date                 NULL              
+  - id_estado                      int                  NOT NULL          
+
+[TABLA] mapeo_fact_registro:
+--------------------------------------------------------------------------------
+  - id                             varchar(45)          NOT NULL   PRI    
+  - id_evaluador                   varchar(45)          NOT NULL          
+  - hora_registro                  datetime             NOT NULL          
+  - id_planta                      bigint               NOT NULL          
+  - id_tipoplanta                  varchar(45)          NOT NULL          
+  - imagen                         text                 NULL              
+  - id_mapeo                       varchar(45)          NULL              
+
+[TABLA] mapeo_dim_tipoplanta:
+--------------------------------------------------------------------------------
+  - id                             varchar(45)          NOT NULL   PRI    
+  - nombre                         varchar(45)          NOT NULL          
+  - factor_productivo              float                NOT NULL          
+  - id_empresa                     int                  NOT NULL   MUL    
+  - descripcion                    varchar(100)         NULL              
+
+[TABLA] mapeo_dim_estadocatastro:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - nombre                         varchar(45)          NOT NULL          
+
+[ERROR] mapeo_fact_estado_hilera: ERROR al consultar
+
+[TABLA] usuario_pivot_sucursal_usuario:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - id_sucursal                    int                  NOT NULL   MUL    
+  - id_usuario                     varchar(45)          NOT NULL   MUL    
+
+[TABLA] usuario_pivot_app_usuario:
+--------------------------------------------------------------------------------
+  - id                             varchar(45)          NOT NULL   PRI    
+  - id_usuario                     varchar(45)          NOT NULL   MUL    
+  - id_app                         int                  NOT NULL   MUL    
+
+[TABLA] general_dim_ceco:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    
+  - nombre                         varchar(60)          NOT NULL          
+  - id_cecotipo                    int                  NOT NULL   MUL    
+  - id_sucursal                    int                  NOT NULL   MUL    
+  - id_estado                      tinyint              NOT NULL   MUL   DEFAULT 1 
+  - fecha_baja                     date                 NULL              
+
+[TABLA] general_dim_app:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - nombre                         varchar(45)          NOT NULL          
+  - descripcion                    varchar(100)         NULL              
+  - URL                            varchar(100)         NULL              
+
+[TABLA] general_dim_empresa:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - nombre                         varchar(45)          NOT NULL          
+  - rut                            int                  NULL              
+  - codigo_verificador             tinyint(1)           NULL              
+  - fecha_suscripcion              date                 NULL              
+
+[TABLA] general_dim_labor:
+--------------------------------------------------------------------------------
+  - id                             varchar(45)          NOT NULL   PRI    
+  - nombre                         varchar(45)          NOT NULL          
+  - id_laborgrupo                  int                  NOT NULL   MUL    
+  - id_estado                      int                  NOT NULL   MUL    
+  - id_unidadpordefecto            int                  NULL       MUL    
+
+[TABLA] tarja_dim_unidad:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    
+  - nombre                         varchar(45)          NOT NULL          
+  - id_estado                      int                  NOT NULL   MUL    
+
+[TABLA] general_dim_cecotipo:
+--------------------------------------------------------------------------------
+  - id                             int                  NOT NULL   PRI    auto_increment
+  - nombre                         varchar(45)          NOT NULL          

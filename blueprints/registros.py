@@ -15,7 +15,7 @@ def obtener_registros():
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen
+            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen, id_mapeo
             FROM mapeo_fact_registro
             ORDER BY hora_registro DESC
         """)
@@ -37,7 +37,7 @@ def obtener_registro(registro_id):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen
+            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen, id_mapeo
             FROM mapeo_fact_registro
             WHERE id = %s
         """, (registro_id,))
@@ -87,19 +87,35 @@ def crear_registro():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Insertar el nuevo registro
-        cursor.execute("""
-            INSERT INTO mapeo_fact_registro 
-            (id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (
-            registro_id,
-            usuario_id,
-            datetime.now(),
-            id_planta,  # Usar el valor convertido
-            data['id_tipoplanta'],
-            data.get('imagen', None)
-        ))
+        # Insertar el nuevo registro (id_mapeo es opcional)
+        id_mapeo = data.get('id_mapeo', None)
+        if id_mapeo:
+            cursor.execute("""
+                INSERT INTO mapeo_fact_registro 
+                (id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen, id_mapeo)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                registro_id,
+                usuario_id,
+                datetime.now(),
+                id_planta,  # Usar el valor convertido
+                data['id_tipoplanta'],
+                data.get('imagen', None),
+                id_mapeo
+            ))
+        else:
+            cursor.execute("""
+                INSERT INTO mapeo_fact_registro 
+                (id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                registro_id,
+                usuario_id,
+                datetime.now(),
+                id_planta,  # Usar el valor convertido
+                data['id_tipoplanta'],
+                data.get('imagen', None)
+            ))
         
         conn.commit()
         cursor.close()
@@ -141,7 +157,7 @@ def actualizar_registro(registro_id):
             return jsonify({"error": "Registro no encontrado"}), 404
         
         # Construir la consulta de actualización dinámicamente
-        campos_actualizables = ['id_planta', 'id_tipoplanta', 'imagen']
+        campos_actualizables = ['id_planta', 'id_tipoplanta', 'imagen', 'id_mapeo']
         campos_a_actualizar = []
         valores = []
         
@@ -233,7 +249,7 @@ def obtener_registros_por_evaluador(evaluador_id):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen
+            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen, id_mapeo
             FROM mapeo_fact_registro
             WHERE id_evaluador = %s
             ORDER BY hora_registro DESC
@@ -256,7 +272,7 @@ def obtener_registros_por_planta(planta_id):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen
+            SELECT id, id_evaluador, hora_registro, id_planta, id_tipoplanta, imagen, id_mapeo
             FROM mapeo_fact_registro
             WHERE id_planta = %s
             ORDER BY hora_registro DESC
@@ -279,7 +295,7 @@ def obtener_registros_por_hilera(hilera_id):
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT r.id, r.id_evaluador, r.hora_registro, r.id_planta, r.id_tipoplanta, r.imagen,
+            SELECT r.id, r.id_evaluador, r.hora_registro, r.id_planta, r.id_tipoplanta, r.imagen, r.id_mapeo,
                    p.planta as numero_planta, p.ubicacion, tp.nombre as tipo_planta_nombre
             FROM mapeo_fact_registro r
             INNER JOIN general_dim_planta p ON r.id_planta = p.id
