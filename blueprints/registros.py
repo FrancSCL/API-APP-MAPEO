@@ -299,7 +299,7 @@ def obtener_registros_por_hilera(hilera_id):
                    p.planta as numero_planta, p.ubicacion, tp.nombre as tipo_planta_nombre
             FROM mapeo_fact_registro r
             INNER JOIN general_dim_planta p ON r.id_planta = p.id
-            LEFT JOIN general_dim_tipoplanta tp ON r.id_tipoplanta = tp.id
+            LEFT JOIN mapeo_dim_tipoplanta tp ON r.id_tipoplanta = tp.id
             WHERE p.id_hilera = %s
             ORDER BY p.planta ASC, r.hora_registro DESC
         """, (hilera_id,))

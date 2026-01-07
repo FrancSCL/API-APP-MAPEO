@@ -457,6 +457,24 @@ curl -X GET "https://tu-api.com/api/tipoplanta" \
 | `nombre_hilera` → `numero_hilera` | Corrección | Actualizar interfaces y componentes | 🔴 CRÍTICO |
 | Agregar `id_mapeo` a `Registro` | Nueva funcionalidad | Actualizar interfaces (opcional) | 🟡 OPCIONAL |
 | Agregar `descripcion` a `TipoPlanta` | Nueva funcionalidad | Actualizar interfaces (opcional) | 🟡 OPCIONAL |
+| Corrección JOIN en `/api/registros/hilera/<id>` | Corrección interna | Ninguna (mejora automática) | ✅ COMPLETADO |
+
+---
+
+## 🔧 **CORRECCIÓN ADICIONAL APLICADA**
+
+### **5. Endpoint `/api/registros/hilera/<hilera_id>` - CORREGIDO**
+
+**Problema anterior**: El endpoint tenía un error en el JOIN que causaba que no se mostrara el nombre del tipo de planta.
+
+**Cambio aplicado**: 
+- Corregido el nombre de tabla en el JOIN: `general_dim_tipoplanta` → `mapeo_dim_tipoplanta`
+
+**Impacto**: 
+- El endpoint ahora funciona correctamente
+- El campo `tipo_planta_nombre` ahora se muestra correctamente en los registros por hilera
+
+**Estado**: ✅ **CORREGIDO** (No requiere cambios en frontend, solo mejora la funcionalidad)
 
 ---
 
@@ -465,6 +483,7 @@ curl -X GET "https://tu-api.com/api/tipoplanta" \
 - **✅ API funcionando**: Todos los endpoints operativos
 - **✅ Errores corregidos**: Endpoints de progreso funcionando correctamente
 - **✅ Nuevos campos disponibles**: `id_mapeo` y `descripcion` disponibles
+- **✅ Correcciones aplicadas**: 5 correcciones críticas en total
 - **✅ Compatibilidad**: Cambios mantienen compatibilidad hacia atrás donde es posible
 
 ---
