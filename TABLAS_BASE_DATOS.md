@@ -147,17 +147,10 @@ Esta API utiliza las siguientes tablas de la base de datos `lahornilla_base_norm
   - `id` (INT) - Identificador único del estado
   - `nombre` (VARCHAR) - Nombre del estado de catastro
 
-### 12. **mapeo_fact_estado_hilera**
-- **Descripción**: Estados de progreso de hileras en mapeo
-- **Uso**: Seguimiento de progreso por hilera
-- **Endpoints relacionados**: `/api/registromapeo`
-- **Columnas**: ⚠️ **Nota**: Esta tabla se referencia en el código pero no se pudo verificar su estructura en la base de datos. Posiblemente no existe o requiere permisos especiales.
-  - `id` (VARCHAR(45)) - Identificador único del estado
-  - `id_registro_mapeo` (VARCHAR(45)) - ID del registro de mapeo
-  - `id_hilera` (BIGINT) - ID de la hilera
-  - `estado` (VARCHAR) - Estado de la hilera (en_progreso, pausado, completado)
-  - `id_usuario` (VARCHAR(45)) - ID del usuario que actualizó el estado
-  - `fecha_actualizacion` (DATETIME) - Fecha de última actualización
+### 12. **mapeo_fact_estado_hilera** ❌ **NO SE USA**
+- **Descripción**: ~~Estados de progreso de hileras en mapeo~~ (Tabla eliminada del uso)
+- **Estado**: ❌ **Esta tabla NO se utiliza más en la API**
+- **Nota**: El estado de las hileras ahora se calcula dinámicamente basado en las plantas mapeadas, sin necesidad de una tabla separada.
 
 ---
 

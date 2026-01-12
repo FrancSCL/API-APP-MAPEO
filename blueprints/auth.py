@@ -60,25 +60,43 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Buscar usuario y verificar estado y acceso a la app
-        sql = """
+        # Primero verificar si el usuario existe (sin validar estado)
+        cursor.execute("""
             SELECT u.*, s.nombre as sucursal_nombre,
                    CONCAT(u.nombre, ' ', u.apellido_paterno, ' ', COALESCE(u.apellido_materno, '')) as nombre_completo
             FROM general_dim_usuario u
             LEFT JOIN general_dim_sucursal s ON u.id_sucursalactiva = s.id
-            WHERE u.usuario = %s 
-            AND u.id_estado = 1
-            AND EXISTS (
-                SELECT 1 
-                FROM usuario_pivot_app_usuario p 
-                WHERE p.id_usuario = u.id 
-                AND p.id_app = 5 -- Acá se debe cambiar por el id de la app
-            )
-        """
-        cursor.execute(sql, (usuario,))
+            WHERE u.usuario = %s
+        """, (usuario,))
         user = cursor.fetchone()
 
-        if not user or not bcrypt.checkpw(clave.encode('utf-8'), user['clave'].encode('utf-8')):
+        # Validar que el usuario existe
+        if not user:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Usuario o clave incorrectos"}), 401
+
+        # Validar que el usuario esté activo (id_estado = 1)
+        if user['id_estado'] != 1:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Usuario inactivo. Contacte al administrador"}), 403
+
+        # Validar que el usuario tenga acceso a la aplicación
+        cursor.execute("""
+            SELECT 1 
+            FROM usuario_pivot_app_usuario p 
+            WHERE p.id_usuario = %s 
+            AND p.id_app = 5
+        """, (user['id'],))
+        
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Usuario sin acceso a esta aplicación"}), 403
+
+        # Validar contraseña
+        if not bcrypt.checkpw(clave.encode('utf-8'), user['clave'].encode('utf-8')):
             cursor.close()
             conn.close()
             return jsonify({"error": "Usuario o clave incorrectos"}), 401

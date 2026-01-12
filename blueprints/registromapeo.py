@@ -341,23 +341,13 @@ def obtener_progreso_registro(registro_id):
             # Calcular porcentaje
             porcentaje = (plantas_mapeadas / total_plantas * 100) if total_plantas > 0 else 0
             
-            # Obtener estado de hilera desde la tabla de estados
-            cursor.execute("""
-                SELECT estado FROM mapeo_fact_estado_hilera 
-                WHERE id_registro_mapeo = %s AND id_hilera = %s
-            """, (registro_id, hilera['id']))
-            
-            estado_result = cursor.fetchone()
-            if estado_result:
-                estado = estado_result['estado']
+            # Calcular estado basado en plantas mapeadas (sin usar tabla de estados)
+            if plantas_mapeadas == 0:
+                estado = "pendiente"
+            elif plantas_mapeadas == total_plantas:
+                estado = "completado"
             else:
-                # Si no hay estado definido, calcularlo basado en plantas mapeadas
-                if plantas_mapeadas == 0:
-                    estado = "pendiente"
-                elif plantas_mapeadas == total_plantas:
-                    estado = "completado"
-                else:
-                    estado = "en_progreso"
+                estado = "en_progreso"
             
             # Contar hileras completadas
             if estado == "completado":
@@ -440,15 +430,17 @@ def obtener_estadisticas():
         return jsonify({"error": str(e)}), 500
 
 # 🔹 NUEVO: Actualizar estado de una hilera específica
+# NOTA: El estado ahora se calcula automáticamente basado en las plantas mapeadas
+# Este endpoint se mantiene para compatibilidad pero el estado se calcula dinámicamente
 @registromapeo_bp.route('/<string:registro_id>/hilera/<int:hilera_id>/estado', methods=['PUT'])
 @jwt_required()
 def actualizar_estado_hilera(registro_id, hilera_id):
     try:
         data = request.json
-        estado = data.get('estado')
+        estado_solicitado = data.get('estado')
         usuario_id = get_jwt_identity()
         
-        if not estado or estado not in ['en_progreso', 'pausado', 'completado']:
+        if not estado_solicitado or estado_solicitado not in ['en_progreso', 'pausado', 'completado']:
             return jsonify({"error": "Estado debe ser: en_progreso, pausado o completado"}), 400
         
         conn = get_db_connection()
@@ -464,62 +456,55 @@ def actualizar_estado_hilera(registro_id, hilera_id):
             conn.close()
             return jsonify({"error": "Registro de mapeo no encontrado"}), 404
         
-        # Verificar que la hilera existe
+        # Verificar que la hilera existe y obtener su número
         cursor.execute("""
-            SELECT id FROM general_dim_hilera WHERE id = %s
+            SELECT id, hilera FROM general_dim_hilera WHERE id = %s
         """, (hilera_id,))
         
-        if not cursor.fetchone():
+        hilera_data = cursor.fetchone()
+        if not hilera_data:
             cursor.close()
             conn.close()
             return jsonify({"error": "Hilera no encontrada"}), 404
         
-        # Verificar si ya existe un estado para esta hilera en este registro
+        # Calcular el estado real basado en las plantas mapeadas
         cursor.execute("""
-            SELECT id FROM mapeo_fact_estado_hilera 
-            WHERE id_registro_mapeo = %s AND id_hilera = %s
-        """, (registro_id, hilera_id))
+            SELECT COUNT(*) as total_plantas
+            FROM general_dim_planta
+            WHERE id_hilera = %s
+        """, (hilera_id,))
+        total_plantas = cursor.fetchone()['total_plantas']
         
-        estado_existente = cursor.fetchone()
+        cursor.execute("""
+            SELECT COUNT(*) as plantas_mapeadas
+            FROM mapeo_fact_registro r
+            INNER JOIN general_dim_planta p ON r.id_planta = p.id
+            WHERE p.id_hilera = %s AND r.id_mapeo = %s
+        """, (hilera_id, registro_id))
+        plantas_mapeadas = cursor.fetchone()['plantas_mapeadas']
         
-        if estado_existente:
-            # Actualizar estado existente
-            cursor.execute("""
-                UPDATE mapeo_fact_estado_hilera 
-                SET estado = %s, id_usuario = %s, fecha_actualizacion = NOW()
-                WHERE id_registro_mapeo = %s AND id_hilera = %s
-            """, (estado, usuario_id, registro_id, hilera_id))
+        # Calcular estado real
+        if plantas_mapeadas == 0:
+            estado_real = "pendiente"
+        elif plantas_mapeadas == total_plantas:
+            estado_real = "completado"
         else:
-            # Crear nuevo estado
-            estado_id = str(uuid.uuid4())
-            cursor.execute("""
-                INSERT INTO mapeo_fact_estado_hilera 
-                (id, id_registro_mapeo, id_hilera, estado, id_usuario)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (estado_id, registro_id, hilera_id, estado, usuario_id))
-        
-        conn.commit()
-        
-        # Obtener el estado actualizado
-        cursor.execute("""
-            SELECT eh.estado, eh.fecha_actualizacion, h.hilera as numero_hilera
-            FROM mapeo_fact_estado_hilera eh
-            INNER JOIN general_dim_hilera h ON eh.id_hilera = h.id
-            WHERE eh.id_registro_mapeo = %s AND eh.id_hilera = %s
-        """, (registro_id, hilera_id))
-        
-        estado_actualizado = cursor.fetchone()
+            estado_real = "en_progreso"
         
         cursor.close()
         conn.close()
         
+        # Retornar el estado calculado (el estado se calcula dinámicamente, no se guarda)
         return jsonify({
             "success": True,
             "hilera_actualizada": {
                 "id_hilera": hilera_id,
-                "numero_hilera": estado_actualizado['numero_hilera'],
-                "estado": estado_actualizado['estado'],
-                "fecha_actualizacion": estado_actualizado['fecha_actualizacion'].isoformat()
+                "numero_hilera": hilera_data['hilera'],
+                "estado": estado_real,  # Estado calculado basado en plantas mapeadas
+                "estado_solicitado": estado_solicitado,  # Estado que se intentó establecer
+                "plantas_mapeadas": plantas_mapeadas,
+                "total_plantas": total_plantas,
+                "nota": "El estado se calcula automáticamente basado en las plantas mapeadas"
             }
         }), 200
         

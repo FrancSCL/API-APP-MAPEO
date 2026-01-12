@@ -3,7 +3,7 @@
 ## 🎯 **RESUMEN**
 Este documento lista todas las tablas de la base de datos `lahornilla_base_normalizada` que son utilizadas por la API.
 
-**Total de Tablas**: **20 tablas**
+**Total de Tablas**: **19 tablas** (actualizado - eliminada `mapeo_fact_estado_hilera`)
 
 ---
 
@@ -117,7 +117,7 @@ Este documento lista todas las tablas de la base de datos `lahornilla_base_norma
 | **Dimensiones (general_dim_*)** | 12 | usuario, sucursal, cuartel, hilera, planta, variedad, especie, ceco, app, empresa, labor, cecotipo |
 | **Dimensiones (mapeo_dim_*)** | 2 | tipoplanta, estadocatastro |
 | **Dimensiones (tarja_dim_*)** | 1 | unidad |
-| **Hechos (mapeo_fact_*)** | 3 | registromapeo, registro, estado_hilera ⚠️ |
+| **Hechos (mapeo_fact_*)** | 2 | registromapeo, registro |
 | **Pivot (usuario_pivot_*)** | 2 | sucursal_usuario, app_usuario |
 | **TOTAL** | **20** | |
 
@@ -202,9 +202,9 @@ Este documento lista todas las tablas de la base de datos `lahornilla_base_norma
 
 ## ✅ **VERIFICACIÓN**
 
-- ✅ **20 tablas identificadas** en el código
+- ✅ **19 tablas identificadas** en el código (actualizado)
 - ✅ **19 tablas verificadas** en la base de datos
-- ⚠️ **1 tabla no verificada**: `mapeo_fact_estado_hilera`
+- ✅ **Todas las tablas utilizadas están verificadas**
 
 ---
 

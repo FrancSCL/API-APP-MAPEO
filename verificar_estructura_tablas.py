@@ -22,7 +22,7 @@ TABLAS = [
     'mapeo_fact_registro',
     'mapeo_dim_tipoplanta',
     'mapeo_dim_estadocatastro',
-    'mapeo_fact_estado_hilera',
+    # 'mapeo_fact_estado_hilera',  # Tabla eliminada - ya no se usa
     'usuario_pivot_sucursal_usuario',
     'usuario_pivot_app_usuario',
     'general_dim_ceco',
