@@ -6,6 +6,7 @@ Flask Application Factory
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from datetime import timedelta
 import os
 
 def create_app():
@@ -20,7 +21,7 @@ def create_app():
     # Load configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key')
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default-jwt-secret')
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Tokens don't expire
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=12)  # Tokens expire in 12 hours
     
     # Initialize JWT
     jwt = JWTManager(app)
