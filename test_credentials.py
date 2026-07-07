@@ -61,18 +61,18 @@ def main():
     # Configuración 1: Usando IP pública (como antes)
     print("\n📡 Configuración 1: IP Pública")
     test_connection_with_credentials(
-        user="UserApp",
-        password="&8y7c()tu9t/+,6`",
+        user="fsoto",
+        password="",
         database="lahornilla_base_normalizada",
         host="34.41.120.220",
         port=3306
     )
     
-    # Configuración 2: Unix socket con UserApp
-    print("\n📡 Configuración 2: Unix Socket con UserApp")
+    # Configuración 2: Unix socket con fsoto
+    print("\n📡 Configuración 2: Unix Socket con fsoto")
     test_connection_with_credentials(
-        user="UserApp",
-        password="&8y7c()tu9t/+,6`",
+        user="fsoto",
+        password="",
         database="lahornilla_base_normalizada",
         unix_socket="/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla"
     )
@@ -91,8 +91,8 @@ def main():
     alternative_users = [
         ("admin", "admin123"),
         ("root", "root"),
-        ("UserApp", "password"),
-        ("UserApp", ""),
+        ("fsoto", "password"),
+        ("fsoto", ""),
     ]
     
     for user, password in alternative_users:

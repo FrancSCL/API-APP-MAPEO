@@ -49,7 +49,7 @@ def test_url_parser():
         from utils.db import parse_cloud_sql_url
         
         # URL de prueba
-        test_url = "mysql+pymysql://UserApp:&8y7c()tu9t/+,6@/lahornilla_base_normalizada?unix_socket=/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla"
+        test_url = "mysql+pymysql://fsoto:@/lahornilla_base_normalizada?unix_socket=/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla"
         
         result = parse_cloud_sql_url(test_url)
         

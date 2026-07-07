@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 def parse_cloud_sql_url(url):
     """
     Parsea manualmente la URL de Cloud SQL para extraer los componentes.
-    Formato esperado: mysql+pymysql://UserApp:&8y7c()tu9t/+,6@/lahornilla_base_normalizada?unix_socket=/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla
+    Formato esperado: mysql+pymysql://<user>:<password>@/lahornilla_base_normalizada?unix_socket=/cloudsql/gestion-la-hornilla:us-central1:gestion-la-hornilla
     """
     try:
         logger.info(f"🔍 Parseando URL: {url}")
