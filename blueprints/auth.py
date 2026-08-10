@@ -4,6 +4,7 @@ from config import Config
 from utils.db import get_db_connection
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 from datetime import date
+from blueprints.permisos import permisos_efectivos
 
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -18,9 +19,11 @@ def register():
     apellido_paterno = data.get('apellido_paterno')
     apellido_materno = data.get('apellido_materno')
     id_sucursalactiva = data.get('id_sucursalactiva')
-    id_estado = data.get('id_estado', 1)  # Por defecto activo
-    id_rol = data.get('id_rol', 3)  # Por defecto usuario común
-    id_perfil = data.get('id_perfil', 1)  # Por defecto perfil 1
+    # id_estado/id_rol/id_perfil NUNCA se aceptan del cliente en un registro público:
+    # aceptarlos permitía auto-asignarse perfil admin (id_perfil=3) al registrarse.
+    id_estado = 1  # activo
+    id_rol = 3  # usuario común
+    id_perfil = 1  # perfil mínimo
 
     if not correo or not clave or not usuario or not id_sucursalactiva or not nombre or not apellido_paterno:
         return jsonify({"error": "Correo, clave, usuario, nombre, apellido paterno y sucursal son requeridos"}), 400
@@ -101,14 +104,18 @@ def login():
             conn.close()
             return jsonify({"error": "Usuario o clave incorrectos"}), 401
 
-        # Crear token con información adicional
+        # Calcular permisos efectivos (perfil + overrides)
+        permisos = sorted(permisos_efectivos(user['id']))
+
+        # Crear token con información adicional (incluye permisos)
         access_token = create_access_token(
             identity=user['id'],
             additional_claims={
                 'rol': user['id_rol'],
                 'perfil': user['id_perfil'],
                 'sucursal': user['id_sucursalactiva'],
-                'sucursal_nombre': user['sucursal_nombre']
+                'sucursal_nombre': user['sucursal_nombre'],
+                'permisos': permisos,
             }
         )
 
@@ -122,7 +129,8 @@ def login():
             "id_sucursal": user['id_sucursalactiva'],
             "sucursal_nombre": user['sucursal_nombre'],
             "id_rol": user['id_rol'],
-            "id_perfil": user['id_perfil']
+            "id_perfil": user['id_perfil'],
+            "permisos": permisos
         }), 200
 
     except Exception as e:
@@ -159,13 +167,17 @@ def refresh():
             conn.close()
             return jsonify({"error": "Usuario no encontrado o sin acceso"}), 401
 
+        # Recalcular permisos efectivos al refresh (por si cambiaron overrides)
+        permisos = sorted(permisos_efectivos(user['id']))
+
         access_token = create_access_token(
             identity=user['id'],
             additional_claims={
                 'rol': user['id_rol'],
                 'perfil': user['id_perfil'],
                 'sucursal': user['id_sucursalactiva'],
-                'sucursal_nombre': user['sucursal_nombre']
+                'sucursal_nombre': user['sucursal_nombre'],
+                'permisos': permisos,
             }
         )
 
@@ -179,7 +191,8 @@ def refresh():
             "id_sucursal": user['id_sucursalactiva'],
             "sucursal_nombre": user['sucursal_nombre'],
             "id_rol": user['id_rol'],
-            "id_perfil": user['id_perfil']
+            "id_perfil": user['id_perfil'],
+            "permisos": permisos
         }), 200
 
     except Exception as e:
