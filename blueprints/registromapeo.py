@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.db import get_db_connection
 from datetime import datetime
 import uuid
+from blueprints.permisos import require_permission
 
 registromapeo_bp = Blueprint('registromapeo_bp', __name__)
 
@@ -55,7 +56,7 @@ def obtener_registro_mapeo(registro_id):
 
 # 🔹 Crear un nuevo registro de mapeo
 @registromapeo_bp.route('/', methods=['POST'])
-@jwt_required()
+@require_permission('mapeo.mapeo.registrar')
 def crear_registro_mapeo():
     try:
         data = request.json
@@ -117,7 +118,7 @@ def crear_registro_mapeo():
 
 # 🔹 Actualizar un registro de mapeo
 @registromapeo_bp.route('/<string:registro_id>', methods=['PUT'])
-@jwt_required()
+@require_permission('mapeo.mapeo.editar')
 def actualizar_registro_mapeo(registro_id):
     try:
         data = request.json
@@ -181,7 +182,7 @@ def actualizar_registro_mapeo(registro_id):
 
 # 🔹 Eliminar un registro de mapeo
 @registromapeo_bp.route('/<string:registro_id>', methods=['DELETE'])
-@jwt_required()
+@require_permission('mapeo.mapeo.editar')
 def eliminar_registro_mapeo(registro_id):
     try:
         conn = get_db_connection()

@@ -23,12 +23,13 @@ APP_ID = 5
 
 # Receta de permisos por perfil. Al cambiar esto = deploy.
 # La logica del Portal es: PERFIL_PERMISOS[id_perfil] = {set de codigos}.
+#
+# Contexto Mapeo (distinto del Portal): la mayoria de peones/mapeadores del
+# campo tienen perfil LECTOR (1). Los damos operar en Mapeo pero NO eliminar.
+# EDITOR (2) = capataz/supervisor: agrega eliminar catastro.
+# SUPER (3) = admin TI (Francisco): bypass total.
 PERFIL_PERMISOS = {
-    1: {  # LECTOR: solo consulta
-        "mapeo.catastro.ver",
-        "mapeo.mapeo.ver",
-    },
-    2: {  # EDITOR: peon/capataz — puede registrar y crear/editar catastro
+    1: {  # LECTOR — peon/mapeador: opera pero NO elimina
         "mapeo.catastro.ver",
         "mapeo.catastro.crear",
         "mapeo.catastro.editar",
@@ -37,7 +38,17 @@ PERFIL_PERMISOS = {
         "mapeo.mapeo.editar",
         "mapeo.mapeo.finalizar",
     },
-    3: {  # SUPER: bypass total
+    2: {  # EDITOR — capataz/supervisor: todo lo anterior + eliminar catastro
+        "mapeo.catastro.ver",
+        "mapeo.catastro.crear",
+        "mapeo.catastro.editar",
+        "mapeo.catastro.eliminar",
+        "mapeo.mapeo.ver",
+        "mapeo.mapeo.registrar",
+        "mapeo.mapeo.editar",
+        "mapeo.mapeo.finalizar",
+    },
+    3: {  # SUPER — admin TI: bypass total
         "*",
     },
 }

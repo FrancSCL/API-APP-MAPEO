@@ -5,6 +5,7 @@ from datetime import datetime, date
 import uuid
 import logging
 import traceback
+from blueprints.permisos import require_permission
 
 plantas_bp = Blueprint('plantas_bp', __name__)
 
@@ -57,7 +58,7 @@ def obtener_planta(planta_id):
 
 # 🔹 Crear una nueva planta
 @plantas_bp.route('/', methods=['POST'])
-@jwt_required()
+@require_permission('mapeo.catastro.crear')
 def crear_planta():
     try:
         # Logging para debug
@@ -143,7 +144,7 @@ def crear_planta():
 
 # 🔹 Actualizar una planta existente
 @plantas_bp.route('/<string:planta_id>', methods=['PUT'])
-@jwt_required()
+@require_permission('mapeo.catastro.editar')
 def actualizar_planta(planta_id):
     try:
         data = request.json
@@ -200,7 +201,7 @@ def actualizar_planta(planta_id):
 
 # 🔹 Eliminar una planta
 @plantas_bp.route('/<string:planta_id>', methods=['DELETE'])
-@jwt_required()
+@require_permission('mapeo.catastro.eliminar')
 def eliminar_planta(planta_id):
     try:
         conn = get_db_connection()
