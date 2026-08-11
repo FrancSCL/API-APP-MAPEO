@@ -58,7 +58,7 @@ def obtener_planta(planta_id):
 
 # 🔹 Crear una nueva planta
 @plantas_bp.route('/', methods=['POST'])
-@require_permission('mapeo.catastro.crear')
+@require_permission('mapeo.catastro.plantas.crear')
 def crear_planta():
     try:
         # Logging para debug
@@ -144,7 +144,7 @@ def crear_planta():
 
 # 🔹 Actualizar una planta existente
 @plantas_bp.route('/<string:planta_id>', methods=['PUT'])
-@require_permission('mapeo.catastro.editar')
+@require_permission('mapeo.catastro.plantas.editar')
 def actualizar_planta(planta_id):
     try:
         data = request.json
@@ -201,7 +201,7 @@ def actualizar_planta(planta_id):
 
 # 🔹 Eliminar una planta
 @plantas_bp.route('/<string:planta_id>', methods=['DELETE'])
-@require_permission('mapeo.catastro.eliminar')
+@require_permission('mapeo.catastro.plantas.eliminar')
 def eliminar_planta(planta_id):
     try:
         conn = get_db_connection()

@@ -56,7 +56,7 @@ def obtener_registro_mapeo(registro_id):
 
 # 🔹 Crear un nuevo registro de mapeo
 @registromapeo_bp.route('/', methods=['POST'])
-@require_permission('mapeo.mapeo.registrar')
+@require_permission('mapeo.mapeo.registros.crear')
 def crear_registro_mapeo():
     try:
         data = request.json
@@ -118,7 +118,7 @@ def crear_registro_mapeo():
 
 # 🔹 Actualizar un registro de mapeo
 @registromapeo_bp.route('/<string:registro_id>', methods=['PUT'])
-@require_permission('mapeo.mapeo.editar')
+@require_permission('mapeo.mapeo.registros.editar')
 def actualizar_registro_mapeo(registro_id):
     try:
         data = request.json
@@ -182,7 +182,7 @@ def actualizar_registro_mapeo(registro_id):
 
 # 🔹 Eliminar un registro de mapeo
 @registromapeo_bp.route('/<string:registro_id>', methods=['DELETE'])
-@require_permission('mapeo.mapeo.editar')
+@require_permission('mapeo.mapeo.registros.editar')
 def eliminar_registro_mapeo(registro_id):
     try:
         conn = get_db_connection()

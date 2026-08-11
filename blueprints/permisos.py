@@ -1,100 +1,70 @@
 """
-Sistema de permisos LH Mapeo — replica el patron del Portal Web.
+Sistema de permisos LH Mapeo (id_app=5) — usa el modelo RBAC nuevo del Portal.
 
-Modelo:
-- Cada usuario tiene un perfil (1=LECTOR, 2=EDITOR, 3=SUPER).
-- Cada perfil trae por defecto un set de permisos (PERFIL_PERMISOS).
-- Overrides individuales van en usuario_pivot_permiso_usuario (mismo mecanismo del Portal).
-- permisos_efectivos(uid) = permisos_del_perfil ∪ overrides.
-- SUPER (perfil=3) bypass total → {"*"}.
+Fuentes:
+- users_dim_rol            : roles por app (id_app=5)
+- users_dim_permiso        : catalogo de permisos (formato mapeo.<modulo>.<submodulo>.<accion>)
+- users_pivot_rol_usuario  : rol asignado a usuario
+- users_pivot_rol_permiso  : que permisos trae cada rol
+- users_pivot_permiso_usuario : override individual (otorgado=1) para sumar permisos
+
+Rol con es_bypass=1 → retorna {"*"} (Admin Mapeo).
 
 Enforcement:
-- @require_permission("mapeo.catastro.eliminar") en endpoints sensibles.
-- 403 si el usuario no tiene el permiso.
-- El JWT trae "permisos" (list) para verificacion rapida sin ir a BD.
+- @require_permission("mapeo.catastro.plantas.eliminar") en endpoints sensibles.
+- Se apoya en el claim 'permisos' del JWT. Fallback a BD si el token no lo trae.
 """
 from functools import wraps
 from flask import jsonify
 from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
 from utils.db import get_db_connection
 
-# ID de esta app en general_dim_app (LH MAPEO = 5)
 APP_ID = 5
-
-# Receta de permisos por perfil. Al cambiar esto = deploy.
-# La logica del Portal es: PERFIL_PERMISOS[id_perfil] = {set de codigos}.
-#
-# Contexto Mapeo (distinto del Portal): la mayoria de peones/mapeadores del
-# campo tienen perfil LECTOR (1). Los damos operar en Mapeo pero NO eliminar.
-# EDITOR (2) = capataz/supervisor: agrega eliminar catastro.
-# SUPER (3) = admin TI (Francisco): bypass total.
-PERFIL_PERMISOS = {
-    1: {  # LECTOR — peon/mapeador: opera pero NO elimina
-        "mapeo.catastro.ver",
-        "mapeo.catastro.crear",
-        "mapeo.catastro.editar",
-        "mapeo.mapeo.ver",
-        "mapeo.mapeo.registrar",
-        "mapeo.mapeo.editar",
-        "mapeo.mapeo.finalizar",
-    },
-    2: {  # EDITOR — capataz/supervisor: todo lo anterior + eliminar catastro
-        "mapeo.catastro.ver",
-        "mapeo.catastro.crear",
-        "mapeo.catastro.editar",
-        "mapeo.catastro.eliminar",
-        "mapeo.mapeo.ver",
-        "mapeo.mapeo.registrar",
-        "mapeo.mapeo.editar",
-        "mapeo.mapeo.finalizar",
-    },
-    3: {  # SUPER — admin TI: bypass total
-        "*",
-    },
-}
 
 
 def permisos_efectivos(id_usuario: str) -> set:
     """
-    Retorna el set de codigos de permiso efectivos del usuario.
-    - Base: PERFIL_PERMISOS[id_perfil]
-    - Union con overrides individuales de usuario_pivot_permiso_usuario
-    - SUPER retorna {"*"} (bypass).
+    Retorna set de codigos de permiso efectivos del usuario para app_id=5.
+    Si alguno de sus roles tiene es_bypass=1, retorna {"*"}.
     """
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+    permisos = set()
 
-    # 1. Perfil del usuario
-    cursor.execute("SELECT id_perfil FROM general_dim_usuario WHERE id=%s", (id_usuario,))
-    row = cursor.fetchone()
-    if not row:
-        cursor.close()
-        conn.close()
-        return set()
-
-    id_perfil = row["id_perfil"]
-
-    # SUPER bypass
-    if id_perfil == 3:
-        cursor.close()
-        conn.close()
-        return {"*"}
-
-    # 2. Base del perfil
-    permisos = set(PERFIL_PERMISOS.get(id_perfil, set()))
-
-    # 3. Overrides individuales (solo permisos de la app 5)
+    # 1. Roles del usuario en Mapeo — bypass corta
     cursor.execute(
-        """
-        SELECT p.id
-        FROM usuario_pivot_permiso_usuario pu
-        JOIN usuario_dim_permiso p ON pu.id_permiso = p.id
-        WHERE pu.id_usuario = %s AND p.id_app = %s AND p.id_estado = 1
-        """,
+        """SELECT r.id, r.es_bypass FROM users_pivot_rol_usuario ru
+            JOIN users_dim_rol r ON ru.id_rol = r.id
+            WHERE ru.id_usuario = %s AND r.id_app = %s AND r.activo = 1""",
         (id_usuario, APP_ID),
     )
+    rol_ids = []
     for r in cursor.fetchall():
-        permisos.add(r["id"])
+        if r["es_bypass"] == 1:
+            cursor.close()
+            conn.close()
+            return {"*"}
+        rol_ids.append(r["id"])
+
+    # 2. Permisos que traen esos roles (via pivot rol_permiso)
+    if rol_ids:
+        placeholders = ",".join(["%s"] * len(rol_ids))
+        cursor.execute(
+            f"""SELECT DISTINCT rp.id_permiso FROM users_pivot_rol_permiso rp
+                 JOIN users_dim_permiso p ON rp.id_permiso = p.id
+                 WHERE rp.id_rol IN ({placeholders}) AND p.activo = 1""",
+            rol_ids,
+        )
+        permisos.update(r["id_permiso"] for r in cursor.fetchall())
+
+    # 3. Overrides individuales (otorgado=1)
+    cursor.execute(
+        """SELECT pu.id_permiso FROM users_pivot_permiso_usuario pu
+            JOIN users_dim_permiso p ON pu.id_permiso = p.id
+            WHERE pu.id_usuario = %s AND p.id_app = %s AND pu.otorgado = 1 AND p.activo = 1""",
+        (id_usuario, APP_ID),
+    )
+    permisos.update(r["id_permiso"] for r in cursor.fetchall())
 
     cursor.close()
     conn.close()
@@ -102,15 +72,11 @@ def permisos_efectivos(id_usuario: str) -> set:
 
 
 def tiene_permiso(permisos: set, codigo: str) -> bool:
-    """True si el set contiene '*' o el codigo exacto."""
     return "*" in permisos or codigo in permisos
 
 
 def require_permission(codigo: str):
-    """
-    Decorator: exige un permiso especifico. Se apoya en el claim 'permisos' del JWT.
-    Fallback: si el JWT no trae permisos (token viejo), consulta BD.
-    """
+    """Decorator: exige un permiso especifico via claim 'permisos' del JWT."""
     def decorator(fn):
         @wraps(fn)
         @jwt_required()
@@ -118,7 +84,6 @@ def require_permission(codigo: str):
             claims = get_jwt()
             permisos = set(claims.get("permisos") or [])
             if not permisos:
-                # Fallback para tokens antiguos que no tienen claim 'permisos'
                 uid = get_jwt_identity()
                 permisos = permisos_efectivos(uid)
             if not tiene_permiso(permisos, codigo):
