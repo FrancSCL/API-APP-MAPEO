@@ -286,6 +286,37 @@ def obtener_registros_por_planta(planta_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# 🔹 Obtener registros por sesion de mapeo
+@registros_bp.route('/mapeo/<string:mapeo_id>', methods=['GET'])
+@jwt_required()
+def obtener_registros_por_mapeo(mapeo_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT r.id, r.id_evaluador, r.hora_registro, r.id_planta, r.id_tipoplanta,
+                   r.imagen, r.id_mapeo,
+                   p.planta AS numero_planta, p.ubicacion, p.id_hilera,
+                   h.hilera AS numero_hilera,
+                   tp.nombre AS tipo_planta_nombre
+            FROM mapeo_fact_registro r
+            INNER JOIN general_dim_planta p ON r.id_planta = p.id
+            INNER JOIN general_dim_hilera h ON p.id_hilera = h.id
+            LEFT JOIN mapeo_dim_tipoplanta tp ON r.id_tipoplanta = tp.id
+            WHERE r.id_mapeo = %s
+            ORDER BY h.hilera ASC, p.planta ASC
+            """,
+            (mapeo_id,),
+        )
+        registros = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(registros), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # 🔹 NUEVO: Obtener registros por hilera
 @registros_bp.route('/hilera/<int:hilera_id>', methods=['GET'])
 @jwt_required()

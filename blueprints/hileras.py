@@ -321,6 +321,32 @@ def obtener_hileras_por_cuartel_con_info(cuartel_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500 
 
+# 🔹 Progreso: conteo de plantas por hilera del cuartel
+# Retorna {hilera_id: n_plantas} en una sola llamada para evitar N requests desde la app.
+@hileras_bp.route('/cuartel/<int:cuartel_id>/progreso', methods=['GET'])
+@jwt_required()
+def obtener_progreso_hileras_cuartel(cuartel_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT h.id AS id_hilera, COUNT(p.id) AS n_plantas
+            FROM general_dim_hilera h
+            LEFT JOIN general_dim_planta p ON p.id_hilera = h.id
+            WHERE h.id_cuartel = %s
+            GROUP BY h.id
+            """,
+            (cuartel_id,),
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify({str(r["id_hilera"]): r["n_plantas"] for r in rows}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @hileras_bp.route('/agregar-multiples', methods=['POST'])
 @jwt_required()
 def agregar_multiples_hileras():
