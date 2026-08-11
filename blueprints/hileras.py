@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.db import get_db_connection
+from blueprints.permisos import require_permission
 from datetime import datetime, date
 import uuid
 import logging
@@ -57,7 +58,7 @@ def obtener_hilera(hilera_id):
 
 # 🔹 Crear una nueva hilera
 @hileras_bp.route('/', methods=['POST'])
-@jwt_required()
+@require_permission('mapeo.catastro.hileras.crear')
 def crear_hilera():
     try:
         # Logging para debug
@@ -139,7 +140,7 @@ def crear_hilera():
 
 # 🔹 Actualizar una hilera existente
 @hileras_bp.route('/<int:hilera_id>', methods=['PUT'])
-@jwt_required()
+@require_permission('mapeo.catastro.plantas.editar')
 def actualizar_hilera(hilera_id):
     try:
         data = request.json
@@ -196,7 +197,7 @@ def actualizar_hilera(hilera_id):
 
 # 🔹 Eliminar una hilera
 @hileras_bp.route('/<int:hilera_id>', methods=['DELETE'])
-@jwt_required()
+@require_permission('mapeo.catastro.hileras.eliminar')
 def eliminar_hilera(hilera_id):
     try:
         conn = get_db_connection()
@@ -348,7 +349,7 @@ def obtener_progreso_hileras_cuartel(cuartel_id):
 
 
 @hileras_bp.route('/agregar-multiples', methods=['POST'])
-@jwt_required()
+@require_permission('mapeo.catastro.hileras.crear')
 def agregar_multiples_hileras():
     try:
         data = request.json
